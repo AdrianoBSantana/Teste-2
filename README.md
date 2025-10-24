@@ -37,6 +37,18 @@ A comunicação entre eles acontece de duas formas inteligentes:
 Esta seção contém as informações técnicas para configurar, executar e testar o projeto.
 
 ### ✨ Tecnologias Utilizadas
+<div align="center">
+  <img src="https://img.shields.io/badge/.NET-8-512BD4?style=for-the-badge&logo=dotnet" alt=".NET 8">
+  <img src="https://img.shields.io/badge/ASP.NET%20Core-8-512BD4?style=for-the-badge&logo=dotnet" alt="ASP.NET Core 8">
+  <img src="https://img.shields.io/badge/Entity%20Framework-Core-512BD4?style=for-the-badge&logo=dotnet" alt="Entity Framework Core">
+  <img src="https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite" alt="SQLite">
+  <img src="https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq" alt="RabbitMQ">
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker" alt="Docker">
+  <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens" alt="JWT">
+  <img src="https://img.shields.io/badge/Polly-resilience-green?style=for-the-badge" alt="Polly">
+  <img src="https://img.shields.io/badge/xUnit-tests-blue?style=for-the-badge" alt="xUnit">
+  <img src="https://img.shields.io/badge/YARP-gateway-purple?style=for-the-badge" alt="YARP">
+</div>
 
 *   **.NET 8 / ASP.NET Core:** Framework para desenvolvimento da aplicação.
 *   **Entity Framework Core:** ORM para acesso aos bancos de dados.
