@@ -1,0 +1,93 @@
+# ===== OS =====
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+
+# ===== User-specific files =====
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.bak
+
+# ===== IDE / editor =====
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.code-workspace
+.idea/
+
+# Rider / ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# ===== Build outputs =====
+[Bb]in/
+[Oo]bj/
+out/
+publish/
+
+# ===== NuGet =====
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# ===== Logs and temporary files =====
+[Ll]og/
+logs/
+*.log
+debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== Test results / coverage =====
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage-
+
+# ===== Databases =====
+# Ignore local SQLite DB files created at runtime
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ===== Docker / containers =====
+.env
+.env.*
+# Local docker-compose override files (if you keep environment-specific overrides locally)
+docker-compose.override.yml
+docker-compose.*.local.yml
+
+# ===== Secrets and credentials =====
+secrets.json
+appsettings.*.Local.json
+*.usersecrets
+
+# ===== Misc tooling caches =====
+*.tmp
+*.temp
+*.cache
+*.pid
+.pids
+.publish
+.vsconfig
+.templateengine
+
+# ===== OS generated thumbnails etc =====
+Thumbs.db
+
+# ===== Misc =====
+# Ignore any local helper files that shouldn't be committed
+.pids.txt
+

@@ -1,0 +1,74 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-ecom
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  servico-estoque:
+    build:
+      context: .
+      dockerfile: ./fonte/servico-estoque/Dockerfile
+    container_name: servico-estoque
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+    ports:
+      - "5290:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  servico-vendas:
+    build:
+      context: .
+      dockerfile: ./fonte/servico-vendas/Dockerfile
+    container_name: servico-vendas
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+    ports:
+      - "5156:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      servico-estoque:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./fonte/api-gateway/Dockerfile
+    container_name: api-gateway
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+    ports:
+      - "5154:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      servico-estoque:
+        condition: service_healthy
+      servico-vendas:
+        condition: service_healthy
