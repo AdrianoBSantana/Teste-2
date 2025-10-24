@@ -1,219 +1,141 @@
 # Plataforma de E-commerce
 
-Este projeto é uma plataforma de e-commerce desenvolvida em .NET 8, utilizando uma arquitetura de micro-serviços. A plataforma é composta por um gateway de API, um serviço de estoque e um serviço de vendas, que se comunicam de forma síncrona e assíncrona.
+## O que é este projeto?
 
-## Arquitetura
+Este projeto é um protótipo de uma plataforma de comércio eletrônico. Ele simula o funcionamento dos bastidores de uma loja online, desde o cadastro e consulta de produtos até a realização de uma venda e a correspondente atualização do estoque.
 
-A plataforma é composta pelos seguintes serviços:
+O sistema foi construído para demonstrar uma arquitetura de software moderna, distribuída em diferentes módulos (micro-serviços) que se comunicam entre si.
 
-*   **API Gateway:** Ponto de entrada único para todas as requisições da plataforma. É responsável por rotear as requisições para os serviços corretos, além de lidar com a autenticação e autorização.
-*   **Serviço de Estoque:** Responsável por gerenciar o estoque de produtos.
-*   **Serviço de Vendas:** Responsável por gerenciar as vendas de produtos.
-*   **Compartilhado:** Projeto que contém código compartilhado entre os serviços, como as configurações de JWT e os eventos de domínio.
-*   **Testes:** Projeto que contém os testes unitários e de integração para os serviços.
+## Visão Geral da Arquitetura
 
-A comunicação entre os serviços é feita da seguinte forma:
+Para entender como o sistema funciona, podemos usar uma analogia com uma loja física:
 
-*   **Síncrona:** O serviço de vendas se comunica com o serviço de estoque via HTTP para verificar a disponibilidade de produtos.
-*   **Assíncrona:** O serviço de vendas publica um evento de "Venda Confirmada" em uma fila do RabbitMQ. O serviço de estoque consome este evento para baixar a quantidade de produtos do estoque.
+*   **API Gateway (O Recepcionista):** É a porta de entrada do sistema. Todas as solicitações (como consultar um produto ou fazer um pedido) chegam primeiro a ele, que as direciona para o departamento correto. Ele também atua como segurança, validando quem pode entrar.
 
-## Tecnologias Utilizadas
+*   **Serviço de Estoque (O Almoxarifado):** Este departamento controla o inventário. Ele é responsável por adicionar novos produtos e dar baixa nos itens que foram vendidos.
 
-*   **.NET 8:** Framework para desenvolvimento de aplicações web.
-*   **ASP.NET Core:** Framework para desenvolvimento de aplicações web em .NET.
-*   **Entity Framework Core:** ORM para acesso a dados.
-*   **SQLite:** Banco de dados relacional embarcado.
-*   **RabbitMQ:** Message broker para comunicação assíncrona.
-*   **YARP (Yet Another Reverse Proxy):** Proxy reverso para o API Gateway.
-*   **JWT (JSON Web Tokens):** Padrão para autenticação e autorização.
-*   **Polly (Microsoft.Extensions.Http.Polly):** Resiliência de HttpClient (retry exponencial + circuit breaker) entre serviços.
-*   **xUnit:** Framework para testes unitários.
-*   **Moq:** Framework para mock de objetos em testes.
+*   **Serviço de Vendas (O Caixa):** É onde os pedidos de compra são processados.
 
-## Como Configurar e Executar o Projeto
+### Como os departamentos se comunicam:
 
-### Pré-requisitos
+A comunicação entre eles acontece de duas formas:
+
+1.  **Comunicação Direta (Síncrona):** Quando um cliente quer comprar um item, o **Caixa** (Serviço de Vendas) liga para o **Almoxarifado** (Serviço de Estoque) para verificar se o produto está disponível. A venda só prossegue se o almoxarifado confirmar.
+2.  **Comunicação por Memorando (Assíncrona):** Após a venda ser confirmada, o **Caixa** envia um memorando (um evento `VendaConfirmada` via RabbitMQ) para o **Almoxarifado**, informando que o produto foi vendido. Ao receber este memorando, o almoxarifado atualiza seus registros e retira o item do inventário.
+
+---
+
+## Guia para Desenvolvedores
+
+Esta seção contém as informações técnicas para configurar, executar e entender a implementação do projeto.
+
+### Tecnologias Utilizadas
+
+*   **.NET 8 / ASP.NET Core:** Framework para desenvolvimento da aplicação.
+*   **Entity Framework Core:** ORM para acesso aos bancos de dados.
+*   **SQLite:** Banco de dados relacional utilizado em cada serviço.
+*   **YARP (Yet Another Reverse Proxy):** Utilizado para implementar o API Gateway.
+*   **RabbitMQ:** Message broker para a comunicação assíncrona (por "memorandos").
+*   **JWT (JSON Web Tokens):** Padrão de mercado para autenticação e autorização.
+*   **Polly:** Biblioteca para resiliência, garantindo que a comunicação entre serviços possa se recuperar de falhas temporárias (ex: tentativas automáticas e circuit breaker).
+*   **xUnit & Moq:** Ferramentas para a criação de testes automatizados.
+*   **Docker:** Utilizado para executar o RabbitMQ em um contêiner isolado.
+
+### Como Configurar e Executar o Projeto
+
+#### Pré-requisitos
 
 *   [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-*   [Docker](https://www.docker.com/products/docker-desktop) (para executar o RabbitMQ)
+*   [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
-### 1. Executar o RabbitMQ
+#### 1. Iniciar o RabbitMQ com Docker
 
-Execute o RabbitMQ em um contêiner Docker:
-
-```bash
-docker run -d --hostname my-rabbit --name some-rabbit -p 15672:15672 -p 5672:5672 rabbitmq:3-management
-```
-
-### 2. Configurar as Conexões
-
-Cada serviço (Estoque e Vendas) utiliza um banco de dados SQLite. Os arquivos de banco de dados (`estoque.db` e `vendas.db`) já estão na raiz de cada projeto de serviço.
-
-As configurações de conexão com o RabbitMQ e as URLs dos serviços estão nos arquivos `appsettings.json` de cada projeto. Por padrão, os serviços estão configurados para serem executados nas seguintes portas:
-
-*   **API Gateway:** `http://localhost:5154`
-*   **Serviço de Estoque:** `http://localhost:5290`
-*   **Serviço de Vendas:** `http://localhost:5156`
-
-Observação: as migrações do EF Core são aplicadas automaticamente na inicialização de cada serviço (`Database.Migrate()`). Não é necessário executar comandos de migração manualmente para criar as tabelas.
-
-## Como Configurar e Executar o Projeto
-
-Abra um terminal para cada serviço e execute o seguinte comando:
-
-**API Gateway:**
-
-```bash
-Token (DEV):
-
-## Executando com Docker Compose (opcional)
-### Guia de Execução Manual Passo a Passo
-
-As instruções abaixo assumem Windows PowerShell. Para bash, ajuste a sintaxe de exportação de variáveis e comandos `curl` conforme necessário.
-
-#### 1. Preparação do ambiente
+Execute o comando abaixo para iniciar o RabbitMQ. O painel de administração estará disponível em `http://localhost:15672` (usuário: `guest`, senha: `guest`).
 
 ```powershell
-# (Opcional) clonar o repositório
-git clone <url-do-repo>
-cd plataforma-ecommerce
+docker run -d --hostname rabbitmq-ecom --name rabbitmq-ecom -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+```
 
-# Restaurar dependências
+#### 2. Restaurar Dependências do Projeto
+
+Navegue até a raiz do projeto e execute:
+
+```powershell
 dotnet restore .\plataforma-ecommerce.sln
 ```
 
-Os projetos usam bancos SQLite locais (`estoque.db` e `vendas.db`) criados automaticamente na inicialização. Não há dependências externas além do RabbitMQ.
+#### 3. Executar os Micro-serviços
 
-#### 2. Subir o RabbitMQ
+Abra **três terminais separados**, um para cada serviço, e execute os comandos abaixo. Mantenha os processos em execução.
 
-```powershell
-docker run -d `
-  --hostname rabbitmq-ecom `
-  --name rabbitmq-ecom `
-  -p 5672:5672 `
-  -p 15672:15672 `
-  rabbitmq:3-management
-```
+*   **Terminal 1 - API Gateway:**
+    ```powershell
+    cd .\fonte\api-gateway
+    dotnet run
+    ```
+*   **Terminal 2 - Serviço de Estoque:**
+    ```powershell
+    cd .\fonte\servico-estoque
+    dotnet run
+    ```
+*   **Terminal 3 - Serviço de Vendas:**
+    ```powershell
+    cd .\fonte\servico-vendas
+    dotnet run
+    ```
 
-*Painel de administração:* http://localhost:15672 (usuário: `guest`, senha: `guest`).
+**Observações Importantes:**
+*   Os bancos de dados SQLite (`estoque.db` e `vendas.db`) são criados e as migrações são aplicadas automaticamente na inicialização de cada serviço.
+*   As portas padrão são:
+    *   API Gateway: `http://localhost:5154`
+    *   Serviço de Estoque: `http://localhost:5290`
+    *   Serviço de Vendas: `http://localhost:5156`
 
-Para reiniciar posteriormente:
+#### 4. Testando o Fluxo Completo via PowerShell
 
-```powershell
-docker stop rabbitmq-ecom
-docker start rabbitmq-ecom
-```
+O guia abaixo mostra como simular uma interação completa com a plataforma.
 
-#### 3. Configurações de cada serviço
+1.  **Gerar Token de Autenticação:**
+    ```powershell
+    $loginBody = @{ Usuario = 'admin'; Senha = 'admin' } | ConvertTo-Json -Compress
+    $token = (Invoke-RestMethod -Method Post -Uri 'http://localhost:5154/autenticacao/token' -ContentType 'application/json' -Body $loginBody).token
+    $headers = @{ Authorization = "Bearer $token" }
+    Write-Host "Token gerado: $token"
+    ```
 
-* As strings de conexão e credenciais do RabbitMQ estão em `appsettings.Development.json`.
-* Portas padrão em desenvolvimento:
-  * API Gateway: http://localhost:5154
-  * Serviço de Estoque: http://localhost:5290
-  * Serviço de Vendas: http://localhost:5156
-* As migrações do EF Core são aplicadas automaticamente (`Database.Migrate()`), portanto nenhum passo extra é necessário para provisionar os bancos.
+2.  **Cadastrar um Novo Produto:**
+    ```powershell
+    $produtoBody = @{ nome = 'Camiseta Azul'; descricao = '100% algodao'; preco = 59.9; quantidadeEmEstoque = 10 } | ConvertTo-Json -Compress
+    $produto = Invoke-RestMethod -Method Post -Uri 'http://localhost:5154/estoque/produtos' -Headers $headers -ContentType 'application/json' -Body $produtoBody
+    $produto
+    ```
 
-#### 4. Executar os microserviços manualmente
+3.  **Criar um Pedido de Venda:**
+    ```powershell
+    $pedidoBody = @{ itens = @(@{ produtoId = $produto.id; quantidade = 2 }) } | ConvertTo-Json -Compress
+    $pedido = Invoke-RestMethod -Method Post -Uri 'http://localhost:5154/vendas/pedidos' -Headers $headers -ContentType 'application/json' -Body $pedidoBody
+    $pedido
+    ```
 
-Abra três janelas do PowerShell e execute os comandos abaixo (um por janela). Mantenha cada processo em execução.
+4.  **Verificar a Baixa de Estoque:**
+    Aguarde alguns segundos para o "memorando" ser processado e verifique o produto novamente. A quantidade em estoque deverá ter sido reduzida.
+    ```powershell
+    Invoke-RestMethod -Method Get -Uri "http://localhost:5154/estoque/produtos/$($produto.id)" -Headers $headers
+    ```
+    *(A `quantidadeEmEstoque` deve ter mudado de 10 para 8).*
 
-```powershell
-# Janela 1 - API Gateway
-cd "c:\Users\...\plataforma-ecommerce\fonte\api-gateway"
+#### 5. Executando com Docker Compose (Alternativa)
 
-```
+O projeto também pode ser executado com Docker Compose. O arquivo `docker-compose.yml` orquestra a subida de todos os serviços.
 
-```powershell
-# Janela 2 - Serviço de Estoque
-cd "c:\Users\...\plataforma-ecommerce\fonte\servico-estoque"
-- Usamos `ASPNETCORE_ENVIRONMENT=Docker` e os arquivos `appsettings.Docker.json` para configurar os destinos internos (serviços e RabbitMQ) via rede do Compose.
-```
+*   O `docker-compose.yml` possui healthchecks e `depends_on` para garantir que os serviços subam na ordem correta.
+*   Dentro dos contêineres, os serviços se comunicam usando a rede interna do Docker (ex: `http://servico-estoque:8080`), enquanto o acesso externo continua via API Gateway.
 
-```powershell
-# Janela 3 - Serviço de Vendas
-cd "c:\Users\...\plataforma-ecommerce\fonte\servico-vendas"
-- O `docker-compose.yml` possui healthchecks nos serviços e no RabbitMQ, e usa `depends_on` com `condition: service_healthy` para orquestrar a ordem de subida.
-```
+#### 6. Encerrando o Ambiente
 
-> Dica: defina `ASPNETCORE_ENVIRONMENT=Development` (padrão) caso deseje logs mais verbosos.
-
-#### 5. Verificar se todos os serviços estão saudáveis
-
-Em uma nova janela, verifique os endpoints de saúde (não requer token):
-
-```powershell
-curl http://localhost:5154/healthz
-curl http://localhost:5290/healthz
-curl http://localhost:5156/healthz
-```
-
-Cada chamada deve retornar `{"status":"ok"}`.
-
-#### 6. Fluxo manual completo via API Gateway
-
-Todas as chamadas abaixo devem incluir o token JWT emitido pelo gateway.
-
-1. **Gerar token:**
-
-	```powershell
-	$loginBody = @{ Usuario = 'admin'; Senha = 'admin' } | ConvertTo-Json -Compress
-	$token = (Invoke-RestMethod -Method Post -Uri 'http://localhost:5154/autenticacao/token' -ContentType 'application/json' -Body $loginBody).token
-	$headers = @{ Authorization = "Bearer $token" }
-	$token
-	```
-
-2. **Cadastrar produto no serviço de estoque:**
-
-	```powershell
-	$produtoBody = @{ nome = 'Camiseta Azul'; descricao = '100% algodao'; preco = 59.9; quantidadeEmEstoque = 10 } | ConvertTo-Json -Compress
-	$produto = Invoke-RestMethod -Method Post -Uri 'http://localhost:5154/estoque/produtos' -Headers $headers -ContentType 'application/json' -Body $produtoBody
-	$produto
-	```
-
-3. **Consultar catálogo de produtos:**
-
-	```powershell
-	Invoke-RestMethod -Method Get -Uri 'http://localhost:5154/estoque/produtos' -Headers $headers
-	```
-
-4. **Criar pedido de venda validando estoque:**
-
-	```powershell
-	$pedidoBody = @{ itens = @(@{ produtoId = $produto.id; quantidade = 2 }) } | ConvertTo-Json -Compress
-	$pedido = Invoke-RestMethod -Method Post -Uri 'http://localhost:5154/vendas/pedidos' -Headers $headers -ContentType 'application/json' -Body $pedidoBody
-	$pedido
-	```
-
-5. **Consultar pedido criado:**
-
-	```powershell
-	Invoke-RestMethod -Method Get -Uri ('http://localhost:5154/vendas/pedidos/' + $pedido.id) -Headers $headers
-	```
-
-6. **Confirmar baixa de estoque causada pelo evento RabbitMQ:**
-
-	```powershell
-	Invoke-RestMethod -Method Get -Uri ('http://localhost:5154/estoque/produtos/' + $produto.id) -Headers $headers
-	```
-
-	A quantidade em estoque deve ser reduzida (ex.: de 10 para 8 após o pedido).
-
-#### 7. Logs e monitoramento
-
-* **RabbitMQ:** painel em http://localhost:15672 permite acompanhar filas e mensagens.
-* **Aplicações .NET:** os logs padrão são enviados ao console; utilize `dotnet run --verbosity detailed` para mais informações.
-* **Health checks:** `/healthz` em cada serviço (gateway incluso) podem ser monitorados por ferramentas externas.
-
-#### 8. Encerrar o ambiente manual
-
-1. Encerrar cada serviço com `Ctrl + C` nos terminais onde `dotnet run` está ativo.
-2. Parar o RabbitMQ:
-
-	```powershell
-	docker stop rabbitmq-ecom
-	docker rm rabbitmq-ecom   # opcional, remove o contêiner
-	```
-
-3. Apagar bancos locais (opcional): delete `estoque.db` e `vendas.db` nas pastas dos serviços para começar do zero.
-- Dentro dos containers, o Serviço de Vendas chama o Serviço de Estoque diretamente via DNS do Compose (`http://servico-estoque:8080/`) para maior estabilidade, enquanto clientes externos usam o API Gateway.
-- O script `scripts/run-e2e.ps1` aguarda os `/healthz` ficarem OK com polling, cria token/produto/pedido, usa retry com backoff exponencial para criar o pedido e verifica a baixa de estoque através de polling do produto.
+1.  Pressione `Ctrl + C` em cada terminal onde os serviços estão rodando.
+2.  Para parar e remover o contêiner do RabbitMQ:
+    ```powershell
+    docker stop rabbitmq-ecom
+    docker rm rabbitmq-ecom
+    ```
