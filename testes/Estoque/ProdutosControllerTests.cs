@@ -21,6 +21,9 @@ public class ProdutosControllerTests
         return ctx;
     }
 
+    /// <summary>
+    /// Testa a criação de um produto válido, verificando se é persistido e retorna status Created.
+    /// </summary>
     [Fact]
     public async Task Cadastrar_DeveCriarProdutoERetornarCreated()
     {
@@ -50,6 +53,9 @@ public class ProdutosControllerTests
         Assert.Equal("Camiseta", salvo!.Nome);
     }
 
+    /// <summary>
+    /// Testa a busca de um produto inexistente, verificando se retorna NotFound.
+    /// </summary>
     [Fact]
     public async Task ObterPorId_Inexistente_DeveRetornarNotFound()
     {

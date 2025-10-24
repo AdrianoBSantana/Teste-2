@@ -33,6 +33,9 @@ public class PedidosControllerTests
         return http;
     }
 
+    /// <summary>
+    /// Testa a criação de um pedido válido com estoque suficiente, verificando persistência e publicação do evento de venda confirmada.
+    /// </summary>
     [Fact]
     public async Task Criar_HappyPath_DevePersistirEPublicarEvento()
     {
@@ -84,6 +87,9 @@ public class PedidosControllerTests
     mockPublish.Verify(p => p.Publish(It.IsAny<Compartilhado.Eventos.VendaConfirmada>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Testa a criação de um pedido com estoque insuficiente, verificando se retorna BadRequest e não publica evento.
+    /// </summary>
     [Fact]
     public async Task Criar_EstoqueInsuficiente_DeveRetornarBadRequest()
     {

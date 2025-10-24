@@ -9,12 +9,12 @@ using ServicoEstoque.Consumidores;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Serviços
+// Configuração de serviços básicos da aplicação
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// JWT
+// Configuração da autenticação JWT (usando configurações compartilhadas)
 builder.Services.Configure<ConfiguracoesJwt>(builder.Configuration.GetSection("Jwt"));
 var jwtConfig = builder.Configuration.GetSection("Jwt").Get<ConfiguracoesJwt>() ?? new ConfiguracoesJwt();
 var chaveSimetrica = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Chave ?? "chave-dev"));
@@ -32,18 +32,18 @@ builder.Services
             ValidIssuer = jwtConfig.Emissor,
             ValidAudience = jwtConfig.Audiencia,
             IssuerSigningKey = chaveSimetrica,
-            ClockSkew = TimeSpan.FromSeconds(5)
+            ClockSkew = TimeSpan.FromSeconds(5) // Tolerância para expiração do token
         };
     });
 
-// DbContext SQLite
+// Configuração do DbContext com SQLite para persistência de dados de estoque
 builder.Services.AddDbContext<EstoqueDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("EstoqueDb"))
 );
 
 builder.Services.AddAuthorization();
 
-// MassTransit com RabbitMQ (consumidor)
+// Configuração do MassTransit com RabbitMQ para consumo de eventos assíncronos
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<BaixarEstoqueQuandoVendaConfirmadaConsumer>();
@@ -61,6 +61,7 @@ builder.Services.AddMassTransit(x =>
             h.Password(pass);
         });
 
+        // Endpoint para consumir eventos de venda confirmada e baixar estoque
         cfg.ReceiveEndpoint("estoque-baixar-quantidade", e =>
         {
             e.ConfigureConsumer<BaixarEstoqueQuandoVendaConfirmadaConsumer>(context);
@@ -70,14 +71,14 @@ builder.Services.AddMassTransit(x =>
 
 var app = builder.Build();
 
-// Pipeline
+// Configuração do pipeline HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Garantir que o banco esteja migrado/criado na inicialização
+// Aplicar migrações do EF Core automaticamente na inicialização para garantir o schema do banco
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<EstoqueDbContext>();
