@@ -137,5 +137,72 @@ O projeto também pode ser executado com Docker Compose. O arquivo `docker-compo
 2.  Para parar e remover o contêiner do RabbitMQ:
     ```powershell
     docker stop rabbitmq-ecom
-    docker rm rabbitmq-ecom
+        docker rm rabbitmq-ecom
+    ```
+
+#### 7. Testando o Fluxo Completo via Swagger
+
+O Swagger permite uma interface visual interativa para testar os endpoints. Cada serviço tem seu próprio Swagger habilitado.
+
+**URLs dos Swaggers:**
+- **API Gateway** (porta 5154): http://localhost:5154/swagger (endpoints roteados para todos os serviços).
+- **Serviço de Estoque** (porta 5290): http://localhost:5290/swagger (endpoints diretos de produtos).
+- **Serviço de Vendas** (porta 5156): http://localhost:5156/swagger (endpoints diretos de pedidos).
+
+**Passo a Passo no Swagger do API Gateway:**
+
+1. **Gerar Token de Autenticação:**
+   - Expanda `POST /autenticacao/token`.
+   - Clique em "Try it out".
+   - Corpo da requisição:
+     ```json
+     {
+       "usuario": "admin",
+       "senha": "admin"
+     }
+     ```
+   - Execute e copie o `token` retornado.
+   - Clique no botão "Authorize" (cadeado) e insira `Bearer <token>` para endpoints protegidos.
+
+2. **Cadastrar um Novo Produto:**
+   - Expanda `POST /estoque/produtos`.
+   - Clique em "Try it out".
+   - Corpo da requisição (exemplo):
+     ```json
+     {
+       "nome": "Camiseta Azul",
+       "descricao": "100% algodão",
+       "preco": 59.90,
+       "quantidadeEmEstoque": 10
+     }
+     ```
+   - Execute. Copie o `id` do produto criado.
+
+3. **Criar um Pedido de Venda:**
+   - Expanda `POST /vendas/pedidos`.
+   - Clique em "Try it out".
+   - Corpo da requisição (use o ID do produto):
+     ```json
+     {
+       "itens": [
+         {
+           "produtoId": "<ID_DO_PRODUTO>",
+           "quantidade": 2
+         }
+       ]
+     }
+     ```
+   - Execute. O pedido será criado e o estoque será baixado automaticamente via evento RabbitMQ.
+
+4. **Verificar a Baixa de Estoque:**
+   - Expanda `GET /estoque/produtos/{id}`.
+   - Insira o ID do produto e execute.
+   - Verifique se `quantidadeEmEstoque` diminuiu (ex.: 10 → 8).
+
+**Dicas:**
+- Aguarde 1-2 segundos após criar o pedido para o processamento assíncrono.
+- Use o painel RabbitMQ (http://localhost:15672) para monitorar mensagens.
+- Para debug direto, acesse os Swaggers individuais dos serviços.
+
+````
     ```
